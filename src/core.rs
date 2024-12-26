@@ -12,25 +12,22 @@ mod private {
     pub trait Sealed {}
 }
 
-pub struct PinnacleTouchpadBuilder<S, D> {
-    spi: S,
-    x: bool,
-    y: bool,
-    filter: bool,
-    swap_x_y: bool,
-    glide_extend: bool,
-    scroll: bool,
-    secondary_tap: bool,
-    all_taps: bool,
-    intellimouse: bool,
-    calibrate: bool,
-    data: D,
+pub struct Config {
+    pub x: bool,
+    pub y: bool,
+    pub filter: bool,
+    pub swap_x_y: bool,
+    pub glide_extend: bool,
+    pub scroll: bool,
+    pub secondary_tap: bool,
+    pub all_taps: bool,
+    pub intellimouse: bool,
+    pub calibrate: bool,
 }
 
-impl<S: SpiDevice<u8>> PinnacleTouchpadBuilder<S, ()> {
-    pub fn new(spi: S) -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
-            spi,
             x: true,
             y: true,
             filter: true,
@@ -41,136 +38,7 @@ impl<S: SpiDevice<u8>> PinnacleTouchpadBuilder<S, ()> {
             all_taps: false,
             intellimouse: false,
             calibrate: false,
-            data: (),
         }
-    }
-
-    pub fn relative_mode(self) -> PinnacleTouchpadBuilder<S, Relative> {
-        PinnacleTouchpadBuilder {
-            spi: self.spi,
-            x: self.x,
-            y: self.y,
-            filter: self.filter,
-            swap_x_y: self.swap_x_y,
-            glide_extend: self.glide_extend,
-            scroll: self.scroll,
-            secondary_tap: self.secondary_tap,
-            all_taps: self.all_taps,
-            intellimouse: self.intellimouse,
-            calibrate: self.calibrate,
-            data: Relative,
-        }
-    }
-
-    pub fn absolute_mode(self) -> PinnacleTouchpadBuilder<S, Absolute> {
-        PinnacleTouchpadBuilder {
-            spi: self.spi,
-            x: self.x,
-            y: self.y,
-            filter: self.filter,
-            swap_x_y: self.swap_x_y,
-            glide_extend: self.glide_extend,
-            scroll: self.scroll,
-            secondary_tap: self.secondary_tap,
-            all_taps: self.all_taps,
-            intellimouse: self.intellimouse,
-            calibrate: self.calibrate,
-            data: Absolute {
-                invert_x: false,
-                invert_y: false,
-            },
-        }
-    }
-}
-
-impl<S, D> PinnacleTouchpadBuilder<S, D> {
-    pub fn enable_x(mut self) -> Self {
-        self.x = true;
-        self
-    }
-    pub fn disable_x(mut self) -> Self {
-        self.x = false;
-        self
-    }
-    pub fn enable_y(mut self) -> Self {
-        self.y = true;
-        self
-    }
-    pub fn disable_y(mut self) -> Self {
-        self.y = false;
-        self
-    }
-    pub fn enable_filter(mut self) -> Self {
-        self.filter = true;
-        self
-    }
-    pub fn disable_filter(mut self) -> Self {
-        self.filter = false;
-        self
-    }
-    pub fn swap_x_y(mut self, swap: bool) -> Self {
-        self.swap_x_y = swap;
-        self
-    }
-    pub fn enable_glide_extend(mut self) -> Self {
-        self.glide_extend = true;
-        self
-    }
-    pub fn disable_glide_extend(mut self) -> Self {
-        self.glide_extend = false;
-        self
-    }
-    pub fn enable_scroll(mut self) -> Self {
-        self.scroll = true;
-        self
-    }
-    pub fn disable_scroll(mut self) -> Self {
-        self.scroll = false;
-        self
-    }
-    pub fn enable_secondary_tap(mut self) -> Self {
-        self.secondary_tap = true;
-        self
-    }
-    pub fn disable_secondary_tap(mut self) -> Self {
-        self.secondary_tap = false;
-        self
-    }
-    pub fn enable_all_taps(mut self) -> Self {
-        self.all_taps = true;
-        self
-    }
-    pub fn disable_all_taps(mut self) -> Self {
-        self.all_taps = false;
-        self
-    }
-    pub fn enable_intellimouse(mut self) -> Self {
-        self.intellimouse = true;
-        self
-    }
-    pub fn disable_intellimouse(mut self) -> Self {
-        self.intellimouse = false;
-        self
-    }
-    pub fn calibrate(mut self) -> Self {
-        self.calibrate = true;
-        self
-    }
-}
-
-impl<S> PinnacleTouchpadBuilder<S, Relative> {}
-
-impl<S> PinnacleTouchpadBuilder<S, Absolute> {
-    pub fn invert_x(mut self, invert: bool) -> Self {
-        self.data.invert_x = invert;
-        self
-    }
-}
-
-impl<S> PinnacleTouchpadBuilder<S, Absolute> {
-    pub fn invert_y(mut self, invert: bool) -> Self {
-        self.data.invert_y = invert;
-        self
     }
 }
 
@@ -195,40 +63,41 @@ impl Build for Relative {
     }
 }
 
-impl<S, D> PinnacleTouchpadBuilder<S, D>
+pub fn new<S, D, Delay>(
+    spi: S,
+    config: Config,
+    delay: &mut Delay,
+    data: D,
+) -> Result<PinnacleTouchpad<S, <D as Build>::Data>, S::Error>
 where
     S: SpiDevice<u8>,
     D: Build,
     <D as Build>::Data: TouchpadData,
+    Delay: DelayNs,
 {
-    pub fn build<Delay: DelayNs>(
-        self,
-        delay: &mut Delay,
-    ) -> Result<PinnacleTouchpad<S, <D as Build>::Data>, S::Error> {
-        let mut pinnacle = PinnacleTouchpad::new(self.spi);
-        pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
-        delay.delay_us(50);
-        let feed_config2 = (self.swap_x_y as u8) << 7
-            | (!self.glide_extend as u8) << 4
-            | (!self.scroll as u8) << 4
-            | (!self.secondary_tap as u8) << 2
-            | (!self.all_taps as u8) << 1
-            | (self.intellimouse as u8);
-        pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
-        // pinnacle.write(FEED_CONFIG2_ADDR, 0x1F)?;
-        // pinnacle.write(FEED_CONFIG1_ADDR, 0x03)?;
-        pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
-        if self.calibrate {
-            let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
-            pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
-        }
-
-        let mut feed_config1 =
-            1 | (!self.y as u8) << 4 | (!self.x as u8) << 3 | (!self.filter as u8) << 2;
-        self.data.build(&mut feed_config1);
-        pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
-        Ok(pinnacle)
+    let mut pinnacle = PinnacleTouchpad::new(spi);
+    pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
+    delay.delay_us(50);
+    let feed_config2 = (config.swap_x_y as u8) << 7
+        | (!config.glide_extend as u8) << 4
+        | (!config.scroll as u8) << 4
+        | (!config.secondary_tap as u8) << 2
+        | (!config.all_taps as u8) << 1
+        | (config.intellimouse as u8);
+    pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
+    // pinnacle.write(FEED_CONFIG2_ADDR, 0x1F)?;
+    // pinnacle.write(FEED_CONFIG1_ADDR, 0x03)?;
+    pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
+    if config.calibrate {
+        let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
+        pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
     }
+
+    let mut feed_config1 =
+        1 | (!config.y as u8) << 4 | (!config.x as u8) << 3 | (!config.filter as u8) << 2;
+    data.build(&mut feed_config1);
+    pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
+    Ok(pinnacle)
 }
 
 impl<S, D> PinnacleTouchpad<S, D>
