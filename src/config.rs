@@ -32,36 +32,33 @@ impl Default for Config {
     }
 }
 
-pub fn new<S, M, D>(
-    spi: S,
-    config: Config,
-    delay: &mut D,
-    mode: M,
-) -> Result<Touchpad<S, M>, S::Error>
-where
-    S: SpiDevice<u8>,
-    M: Mode,
-    D: DelayNs,
-{
-    let mut pinnacle = Touchpad::new(spi);
-    pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
-    delay.delay_us(50);
-    let feed_config2 = (config.swap_x_y as u8) << 7
-        | (!config.glide_extend as u8) << 4
-        | (!config.scroll as u8) << 4
-        | (!config.secondary_tap as u8) << 2
-        | (!config.all_taps as u8) << 1
-        | (config.intellimouse as u8);
-    pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
-    pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
-    if config.calibrate {
-        let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
-        pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
-    }
+impl Config {
+    pub fn init<M, S, D>(self, mode: M, spi: S, delay: &mut D) -> Result<Touchpad<S, M>, S::Error>
+    where
+        S: SpiDevice<u8>,
+        M: Mode,
+        D: DelayNs,
+    {
+        let mut pinnacle = Touchpad::new(spi);
+        pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
+        delay.delay_us(50);
+        let feed_config2 = (self.swap_x_y as u8) << 7
+            | (!self.glide_extend as u8) << 4
+            | (!self.scroll as u8) << 4
+            | (!self.secondary_tap as u8) << 2
+            | (!self.all_taps as u8) << 1
+            | (self.intellimouse as u8);
+        pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
+        pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
+        if self.calibrate {
+            let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
+            pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
+        }
 
-    let mut feed_config1 =
-        1 | (!config.y as u8) << 4 | (!config.x as u8) << 3 | (!config.filter as u8) << 2;
-    mode.build(&mut feed_config1);
-    pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
-    Ok(pinnacle)
+        let mut feed_config1 =
+            1 | (!self.y as u8) << 4 | (!self.x as u8) << 3 | (!self.filter as u8) << 2;
+        mode.build(&mut feed_config1);
+        pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
+        Ok(pinnacle)
+    }
 }
