@@ -1,6 +1,6 @@
 use crate::*;
 use core::marker::PhantomData;
-use embedded_hal::spi::*;
+use embedded_hal::spi::{Operation, SpiDevice};
 
 pub struct Touchpad<S: SpiDevice<u8>, D> {
     spi: S,
@@ -20,7 +20,7 @@ pub enum SampleRate {
 impl<S, D> Touchpad<S, D>
 where
     S: SpiDevice<u8>,
-    D: Build,
+    D: Mode,
 {
     pub(crate) fn new(spi: S) -> Self {
         Self {

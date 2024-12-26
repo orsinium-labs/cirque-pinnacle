@@ -1,6 +1,6 @@
 use crate::*;
 use embedded_hal::delay::DelayNs;
-use embedded_hal::spi::*;
+use embedded_hal::spi::SpiDevice;
 
 pub struct Config {
     pub x: bool,
@@ -40,7 +40,7 @@ pub fn new<S, D, Delay>(
 ) -> Result<Touchpad<S, D>, S::Error>
 where
     S: SpiDevice<u8>,
-    D: Build,
+    D: Mode,
     Delay: DelayNs,
 {
     let mut pinnacle = Touchpad::new(spi);
