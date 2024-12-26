@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use embedded_hal::delay::DelayNs;
 use embedded_hal::spi::*;
 
-pub struct PinnacleTouchpad<S, D> {
+pub struct Touchpad<S: SpiDevice<u8>, D> {
     spi: S,
     phantom_: PhantomData<D>,
 }
@@ -62,14 +62,14 @@ pub fn new<S, D, Delay>(
     config: Config,
     delay: &mut Delay,
     data: D,
-) -> Result<PinnacleTouchpad<S, <D as Build>::Data>, S::Error>
+) -> Result<Touchpad<S, <D as Build>::Data>, S::Error>
 where
     S: SpiDevice<u8>,
     D: Build,
     <D as Build>::Data: TouchpadData,
     Delay: DelayNs,
 {
-    let mut pinnacle = PinnacleTouchpad::new(spi);
+    let mut pinnacle = Touchpad::new(spi);
     pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
     delay.delay_us(50);
     let feed_config2 = (config.swap_x_y as u8) << 7
@@ -94,18 +94,6 @@ where
     Ok(pinnacle)
 }
 
-impl<S, D> PinnacleTouchpad<S, D>
-where
-    D: TouchpadData,
-{
-    fn new(spi: S) -> Self {
-        Self {
-            spi,
-            phantom_: PhantomData,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum SampleRate {
     OneHundred,
@@ -116,11 +104,18 @@ pub enum SampleRate {
     Ten,
 }
 
-impl<S, D> PinnacleTouchpad<S, D>
+impl<S, D> Touchpad<S, D>
 where
     S: SpiDevice<u8>,
     D: TouchpadData,
 {
+    fn new(spi: S) -> Self {
+        Self {
+            spi,
+            phantom_: PhantomData,
+        }
+    }
+
     pub fn clear_flags(&mut self) -> Result<(), S::Error> {
         self.write(STATUS1_ADDR, 0x00)
     }
@@ -221,7 +216,7 @@ pub struct AbsoluteData {
     pub button_flags: u8,
 }
 
-impl<S> PinnacleTouchpad<S, AbsoluteData>
+impl<S> Touchpad<S, AbsoluteData>
 where
     S: SpiDevice<u8>,
 {
@@ -244,7 +239,7 @@ pub struct RelativeData {
     pub wheel: i8,
 }
 
-impl<S> PinnacleTouchpad<S, RelativeData>
+impl<S> Touchpad<S, RelativeData>
 where
     S: SpiDevice<u8>,
 {
