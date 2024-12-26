@@ -200,13 +200,13 @@ where
     D: Build,
     <D as Build>::Data: TouchpadData,
 {
-    pub fn build(
+    pub fn build<Delay: DelayNs>(
         self,
         delay: &mut Delay,
     ) -> Result<PinnacleTouchpad<S, <D as Build>::Data>, S::Error> {
         let mut pinnacle = PinnacleTouchpad::new(self.spi);
         pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
-        delay.delay(50.micros());
+        delay.delay_us(50);
         let feed_config2 = (self.swap_x_y as u8) << 7
             | (!self.glide_extend as u8) << 4
             | (!self.scroll as u8) << 4
