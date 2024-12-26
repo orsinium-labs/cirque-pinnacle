@@ -1,3 +1,4 @@
+use crate::constants::*;
 use core::marker::PhantomData;
 use embedded_hal::delay::DelayNs;
 use embedded_hal::spi::*;
@@ -258,8 +259,7 @@ where
     D: TouchpadData,
 {
     pub fn clear_flags(&mut self) -> Result<(), S::Error> {
-        let res = self.write(STATUS1_ADDR, 0x00);
-        res
+        self.write(STATUS1_ADDR, 0x00)
     }
 
     pub fn product_id(&mut self) -> Result<u8, S::Error> {
@@ -406,30 +406,3 @@ where
         })
     }
 }
-
-const WRITE_BITS: u8 = 0b_1000_0000;
-const READ_BITS: u8 = 0b_1010_0000;
-const ADDR_MASK: u8 = 0b_0001_1111;
-const READ_FILL: u8 = 0xFB;
-const READ_CONTINUE: u8 = 0xFC;
-
-const FIRMWARE_ID_ADDR: u8 = 0x00;
-const FIRMWARE_VERSION_ADDR: u8 = 0x01;
-const STATUS1_ADDR: u8 = 0x02;
-const SYS_CONFIG1_ADDR: u8 = 0x03;
-const FEED_CONFIG1_ADDR: u8 = 0x04;
-const FEED_CONFIG2_ADDR: u8 = 0x05;
-const CAL_CONFIG1_ADDR: u8 = 0x07;
-const PS2_AUX_CTRL_ADDR: u8 = 0x08;
-const SAMPLE_RATE_ADDR: u8 = 0x09;
-const Z_IDLE_ADDR: u8 = 0x0A;
-const Z_SCALER_ADDR: u8 = 0x0B;
-const SLEEP_INTERVAL_ADDR: u8 = 0x0C;
-const SLEEP_TIMER_ADDR: u8 = 0x0D;
-const PACKET_BYTE_0_ADDR: u8 = 0x12;
-const PACKET_BYTE_1_ADDR: u8 = 0x13;
-const PACKET_BYTE_2_ADDR: u8 = 0x14;
-const PACKET_BYTE_3_ADDR: u8 = 0x15;
-const PACKET_BYTE_4_ADDR: u8 = 0x16;
-const PACKET_BYTE_5_ADDR: u8 = 0x17;
-const PRODUCT_ID_ADDR: u8 = 0x1F;
