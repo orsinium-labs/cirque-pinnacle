@@ -55,9 +55,9 @@ impl Config {
             pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
         }
 
-        let mut feed_config1 =
+        let feed_config1 =
             1 | (!self.y as u8) << 4 | (!self.x as u8) << 3 | (!self.filter as u8) << 2;
-        mode.build(&mut feed_config1);
+        let feed_config1 = mode.build(feed_config1);
         pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
         Ok(pinnacle)
     }
