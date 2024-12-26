@@ -9,18 +9,18 @@ pub struct Touchpad<S: SpiDevice<u8>, D> {
 
 #[derive(Debug)]
 pub enum SampleRate {
-    OneHundred,
-    Eighty,
-    Sixty,
-    Forty,
-    Twenty,
-    Ten,
+    S100,
+    S80,
+    S60,
+    S40,
+    S20,
+    S10,
 }
 
 impl<S, D> Touchpad<S, D>
 where
     S: SpiDevice<u8>,
-    D: TouchpadData,
+    D: Build,
 {
     pub(crate) fn new(spi: S) -> Self {
         Self {
@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<S> Touchpad<S, AbsoluteData>
+impl<S> Touchpad<S, Absolute>
 where
     S: SpiDevice<u8>,
 {
@@ -127,7 +127,7 @@ where
     }
 }
 
-impl<S> Touchpad<S, RelativeData>
+impl<S> Touchpad<S, Relative>
 where
     S: SpiDevice<u8>,
 {

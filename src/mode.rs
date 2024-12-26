@@ -6,19 +6,16 @@ pub struct Absolute {
 }
 
 pub trait Build {
-    type Data;
     fn build(&self, feed_config1: &mut u8);
 }
 
 impl Build for Absolute {
-    type Data = AbsoluteData;
     fn build(&self, feed_config1: &mut u8) {
         *feed_config1 |= (self.invert_y as u8) << 7 | (self.invert_x as u8) << 6 | 1 << 1;
     }
 }
 
 impl Build for Relative {
-    type Data = RelativeData;
     fn build(&self, feed_config1: &mut u8) {
         *feed_config1 &= !(1 << 1);
     }

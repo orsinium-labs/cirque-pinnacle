@@ -37,11 +37,10 @@ pub fn new<S, D, Delay>(
     config: Config,
     delay: &mut Delay,
     data: D,
-) -> Result<Touchpad<S, <D as Build>::Data>, S::Error>
+) -> Result<Touchpad<S, D>, S::Error>
 where
     S: SpiDevice<u8>,
     D: Build,
-    <D as Build>::Data: TouchpadData,
     Delay: DelayNs,
 {
     let mut pinnacle = Touchpad::new(spi);
@@ -54,8 +53,6 @@ where
         | (!config.all_taps as u8) << 1
         | (config.intellimouse as u8);
     pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
-    // pinnacle.write(FEED_CONFIG2_ADDR, 0x1F)?;
-    // pinnacle.write(FEED_CONFIG1_ADDR, 0x03)?;
     pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
     if config.calibrate {
         let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
