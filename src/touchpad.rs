@@ -1,97 +1,10 @@
-use crate::constants::*;
+use crate::*;
 use core::marker::PhantomData;
-use embedded_hal::delay::DelayNs;
 use embedded_hal::spi::*;
 
 pub struct Touchpad<S: SpiDevice<u8>, D> {
     spi: S,
     phantom_: PhantomData<D>,
-}
-
-pub struct Config {
-    pub x: bool,
-    pub y: bool,
-    pub filter: bool,
-    pub swap_x_y: bool,
-    pub glide_extend: bool,
-    pub scroll: bool,
-    pub secondary_tap: bool,
-    pub all_taps: bool,
-    pub intellimouse: bool,
-    pub calibrate: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            x: true,
-            y: true,
-            filter: true,
-            swap_x_y: true,
-            glide_extend: false,
-            scroll: false,
-            secondary_tap: false,
-            all_taps: false,
-            intellimouse: false,
-            calibrate: false,
-        }
-    }
-}
-
-pub trait Build {
-    type Data;
-    fn build(&self, feed_config1: &mut u8);
-}
-
-impl Build for Absolute {
-    type Data = AbsoluteData;
-    fn build(&self, feed_config1: &mut u8) {
-        *feed_config1 |= (self.invert_y as u8) << 7 | (self.invert_x as u8) << 6 | 1 << 1;
-    }
-}
-
-impl Build for Relative {
-    type Data = RelativeData;
-    fn build(&self, feed_config1: &mut u8) {
-        *feed_config1 &= !(1 << 1);
-    }
-}
-
-pub fn new<S, D, Delay>(
-    spi: S,
-    config: Config,
-    delay: &mut Delay,
-    data: D,
-) -> Result<Touchpad<S, <D as Build>::Data>, S::Error>
-where
-    S: SpiDevice<u8>,
-    D: Build,
-    <D as Build>::Data: TouchpadData,
-    Delay: DelayNs,
-{
-    let mut pinnacle = Touchpad::new(spi);
-    pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
-    delay.delay_us(50);
-    let feed_config2 = (config.swap_x_y as u8) << 7
-        | (!config.glide_extend as u8) << 4
-        | (!config.scroll as u8) << 4
-        | (!config.secondary_tap as u8) << 2
-        | (!config.all_taps as u8) << 1
-        | (config.intellimouse as u8);
-    pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
-    // pinnacle.write(FEED_CONFIG2_ADDR, 0x1F)?;
-    // pinnacle.write(FEED_CONFIG1_ADDR, 0x03)?;
-    pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
-    if config.calibrate {
-        let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
-        pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
-    }
-
-    let mut feed_config1 =
-        1 | (!config.y as u8) << 4 | (!config.x as u8) << 3 | (!config.filter as u8) << 2;
-    data.build(&mut feed_config1);
-    pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
-    Ok(pinnacle)
 }
 
 #[derive(Debug)]
@@ -109,7 +22,7 @@ where
     S: SpiDevice<u8>,
     D: TouchpadData,
 {
-    fn new(spi: S) -> Self {
+    pub(crate) fn new(spi: S) -> Self {
         Self {
             spi,
             phantom_: PhantomData,
@@ -191,29 +104,12 @@ where
         Ok(buf)
     }
 
-    fn write(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
+    pub(crate) fn write(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
         let addr = WRITE_BITS | (addr & ADDR_MASK);
         let mut buf = [addr, data];
         self.spi.transfer_in_place(&mut buf).unwrap();
         Ok(())
     }
-}
-pub struct Relative;
-pub struct Absolute {
-    invert_x: bool,
-    invert_y: bool,
-}
-
-pub trait TouchpadData {}
-impl TouchpadData for AbsoluteData {}
-impl TouchpadData for RelativeData {}
-
-#[derive(Copy, Clone)]
-pub struct AbsoluteData {
-    pub x: u16,
-    pub y: u16,
-    pub z: u8,
-    pub button_flags: u8,
 }
 
 impl<S> Touchpad<S, AbsoluteData>
@@ -229,14 +125,6 @@ where
             button_flags: data[0] & 0x3F,
         })
     }
-}
-
-#[derive(Copy, Clone)]
-pub struct RelativeData {
-    pub x: i16,
-    pub y: i16,
-    pub button_flags: u8,
-    pub wheel: i8,
 }
 
 impl<S> Touchpad<S, RelativeData>
