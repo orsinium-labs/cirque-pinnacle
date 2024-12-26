@@ -2,9 +2,9 @@ use crate::*;
 use core::marker::PhantomData;
 use embedded_hal::spi::{Operation, SpiDevice};
 
-pub struct Touchpad<S: SpiDevice<u8>, D> {
+pub struct Touchpad<S: SpiDevice<u8>, M: Mode> {
     spi: S,
-    phantom_: PhantomData<D>,
+    phantom_: PhantomData<M>,
 }
 
 #[derive(Debug)]
@@ -17,11 +17,7 @@ pub enum SampleRate {
     S10,
 }
 
-impl<S, D> Touchpad<S, D>
-where
-    S: SpiDevice<u8>,
-    D: Mode,
-{
+impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
     pub(crate) fn new(spi: S) -> Self {
         Self {
             spi,
@@ -112,10 +108,7 @@ where
     }
 }
 
-impl<S> Touchpad<S, Absolute>
-where
-    S: SpiDevice<u8>,
-{
+impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
     pub fn read_absolute(&mut self) -> Result<AbsoluteData, S::Error> {
         let data = self.read_multi::<6>(PACKET_BYTE_0_ADDR)?;
         Ok(AbsoluteData {
@@ -127,10 +120,7 @@ where
     }
 }
 
-impl<S> Touchpad<S, Relative>
-where
-    S: SpiDevice<u8>,
-{
+impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
     pub fn read_relative(&mut self) -> Result<RelativeData, S::Error> {
         let data = self.read_multi::<4>(PACKET_BYTE_0_ADDR)?;
         let mut x = data[1] as i16;

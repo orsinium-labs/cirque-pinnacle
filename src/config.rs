@@ -32,16 +32,16 @@ impl Default for Config {
     }
 }
 
-pub fn new<S, D, Delay>(
+pub fn new<S, M, D>(
     spi: S,
     config: Config,
-    delay: &mut Delay,
-    data: D,
-) -> Result<Touchpad<S, D>, S::Error>
+    delay: &mut D,
+    mode: M,
+) -> Result<Touchpad<S, M>, S::Error>
 where
     S: SpiDevice<u8>,
-    D: Mode,
-    Delay: DelayNs,
+    M: Mode,
+    D: DelayNs,
 {
     let mut pinnacle = Touchpad::new(spi);
     pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
@@ -61,7 +61,7 @@ where
 
     let mut feed_config1 =
         1 | (!config.y as u8) << 4 | (!config.x as u8) << 3 | (!config.filter as u8) << 2;
-    data.build(&mut feed_config1);
+    mode.build(&mut feed_config1);
     pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
     Ok(pinnacle)
 }
