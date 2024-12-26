@@ -2,6 +2,7 @@ use crate::*;
 use embedded_hal::delay::DelayNs;
 use embedded_hal::spi::SpiDevice;
 
+#[expect(clippy::struct_excessive_bools)]
 pub struct Config {
     pub x: bool,
     pub y: bool,
@@ -33,7 +34,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn init<M, S, D>(self, mode: M, spi: S, delay: &mut D) -> Result<Touchpad<S, M>, S::Error>
+    pub fn init<M, S, D>(self, mode: &M, spi: S, delay: &mut D) -> Result<Touchpad<S, M>, S::Error>
     where
         S: SpiDevice<u8>,
         M: Mode,
@@ -42,12 +43,12 @@ impl Config {
         let mut pinnacle = Touchpad::new(spi);
         pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
         delay.delay_us(50);
-        let feed_config2 = (self.swap_x_y as u8) << 7
-            | (!self.glide_extend as u8) << 4
-            | (!self.scroll as u8) << 4
-            | (!self.secondary_tap as u8) << 2
-            | (!self.all_taps as u8) << 1
-            | (self.intellimouse as u8);
+        let feed_config2 = u8::from(self.swap_x_y) << 7
+            | u8::from(!self.glide_extend) << 4
+            | u8::from(!self.scroll) << 4
+            | u8::from(!self.secondary_tap) << 2
+            | u8::from(!self.all_taps) << 1
+            | u8::from(self.intellimouse);
         pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
         pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
         if self.calibrate {
@@ -56,7 +57,7 @@ impl Config {
         }
 
         let feed_config1 =
-            1 | (!self.y as u8) << 4 | (!self.x as u8) << 3 | (!self.filter as u8) << 2;
+            1 | u8::from(!self.y) << 4 | u8::from(!self.x) << 3 | u8::from(!self.filter) << 2;
         let feed_config1 = mode.build(feed_config1);
         pinnacle.write(FEED_CONFIG1_ADDR, feed_config1)?;
         Ok(pinnacle)

@@ -12,7 +12,7 @@ pub trait Mode {
 
 impl Mode for Absolute {
     fn build(&self, feed_config1: u8) -> u8 {
-        feed_config1 | ((self.invert_y as u8) << 7 | (self.invert_x as u8) << 6 | 1 << 1)
+        feed_config1 | (u8::from(self.invert_y) << 7 | u8::from(self.invert_x) << 6 | 1 << 1)
     }
 }
 

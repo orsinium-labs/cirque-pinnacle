@@ -18,7 +18,7 @@ pub enum SampleRate {
 }
 
 impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
-    pub(crate) fn new(spi: S) -> Self {
+    pub(crate) const fn new(spi: S) -> Self {
         Self {
             spi,
             phantom_: PhantomData,
@@ -58,7 +58,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         todo!()
     }
 
-    pub fn set_sample_rate(&mut self, _sample_rate: SampleRate) -> Result<(), S::Error> {
+    pub fn set_sample_rate(&mut self, _sample_rate: &SampleRate) -> Result<(), S::Error> {
         todo!()
     }
 
@@ -82,7 +82,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
     fn read(&mut self, addr: u8) -> Result<u8, S::Error> {
         let addr = READ_BITS | (addr & ADDR_MASK);
         let mut buf = [addr, READ_FILL, READ_FILL, READ_FILL];
-        self.spi.transfer_in_place(&mut buf).unwrap();
+        self.spi.transfer_in_place(&mut buf)?;
         Ok(buf[3])
     }
 
@@ -91,19 +91,17 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         let mut buf = [READ_CONTINUE; N];
         buf[N - 1] = READ_FILL;
         let mut addr_buf = [addr, READ_CONTINUE, READ_CONTINUE];
-        self.spi
-            .transaction(&mut [
-                Operation::TransferInPlace(&mut addr_buf),
-                Operation::TransferInPlace(&mut buf),
-            ])
-            .unwrap();
+        self.spi.transaction(&mut [
+            Operation::TransferInPlace(&mut addr_buf),
+            Operation::TransferInPlace(&mut buf),
+        ])?;
         Ok(buf)
     }
 
     pub(crate) fn write(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
         let addr = WRITE_BITS | (addr & ADDR_MASK);
         let mut buf = [addr, data];
-        self.spi.transfer_in_place(&mut buf).unwrap();
+        self.spi.transfer_in_place(&mut buf)?;
         Ok(())
     }
 }
@@ -112,8 +110,8 @@ impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
     pub fn read_absolute(&mut self) -> Result<AbsoluteData, S::Error> {
         let data = self.read_multi::<6>(PACKET_BYTE_0_ADDR)?;
         Ok(AbsoluteData {
-            x: data[2] as u16 | (((data[4] & 0x0F) as u16) << 8),
-            y: data[3] as u16 | (((data[4] & 0xF0) as u16) << 4),
+            x: u16::from(data[2]) | (u16::from(data[4] & 0x0F) << 8),
+            y: u16::from(data[3]) | (u16::from(data[4] & 0xF0) << 4),
             z: data[5] & 0x3F,
             button_flags: data[0] & 0x3F,
         })
@@ -123,8 +121,8 @@ impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
 impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
     pub fn read_relative(&mut self) -> Result<RelativeData, S::Error> {
         let data = self.read_multi::<4>(PACKET_BYTE_0_ADDR)?;
-        let mut x = data[1] as i16;
-        let mut y = data[2] as i16;
+        let mut x = i16::from(data[1]);
+        let mut y = i16::from(data[2]);
         if (data[0] & 0x10) > 0 {
             x -= 256;
         }
@@ -135,6 +133,7 @@ impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
             x,
             y,
             button_flags: data[0] & 0x07,
+            #[expect(clippy::cast_possible_wrap)]
             wheel: data[3] as i8,
         })
     }
