@@ -8,10 +8,6 @@ pub struct PinnacleTouchpad<S, D> {
     phantom_: PhantomData<D>,
 }
 
-mod private {
-    pub trait Sealed {}
-}
-
 pub struct Config {
     pub x: bool,
     pub y: bool,
@@ -42,12 +38,11 @@ impl Default for Config {
     }
 }
 
-pub trait Build: private::Sealed {
-    type Data: private::Sealed;
+pub trait Build {
+    type Data;
     fn build(&self, feed_config1: &mut u8);
 }
 
-impl private::Sealed for Absolute {}
 impl Build for Absolute {
     type Data = AbsoluteData;
     fn build(&self, feed_config1: &mut u8) {
@@ -55,7 +50,6 @@ impl Build for Absolute {
     }
 }
 
-impl private::Sealed for Relative {}
 impl Build for Relative {
     type Data = RelativeData;
     fn build(&self, feed_config1: &mut u8) {
@@ -215,10 +209,7 @@ pub struct Absolute {
     invert_y: bool,
 }
 
-impl private::Sealed for RelativeData {}
-impl private::Sealed for AbsoluteData {}
-
-pub trait TouchpadData: private::Sealed {}
+pub trait TouchpadData {}
 impl TouchpadData for AbsoluteData {}
 impl TouchpadData for RelativeData {}
 
