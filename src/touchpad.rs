@@ -155,7 +155,11 @@ impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
         Ok(RelativeData {
             x,
             y,
-            button_flags: data[0] & 0x07,
+            buttons: Buttons {
+                primary: data[0] & 0b001 != 0,
+                secondary: data[0] & 0b010 != 0,
+                auxiliary: data[0] & 0b100 != 0,
+            },
             #[expect(clippy::cast_possible_wrap)]
             wheel: data[3] as i8,
         })

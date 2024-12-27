@@ -99,6 +99,16 @@ pub struct AbsoluteData {
 pub struct RelativeData {
     pub x: i16,
     pub y: i16,
-    pub button_flags: u8,
     pub wheel: i8,
+    pub buttons: Buttons,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Buttons {
+    /// BTN Primary (or tap).
+    pub primary: bool,
+    /// BTN Secondary (or top right corner tap).
+    pub secondary: bool,
+    /// BTN Auxiliary.
+    pub auxiliary: bool,
 }
