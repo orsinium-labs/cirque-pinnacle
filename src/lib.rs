@@ -12,7 +12,8 @@
 #![allow(
     clippy::enum_glob_use,
     clippy::wildcard_imports,
-    clippy::missing_errors_doc
+    clippy::missing_errors_doc,
+    clippy::doc_markdown
 )]
 
 mod config;

@@ -17,16 +17,24 @@ pub enum SampleRate {
     S10,
 }
 
+pub struct Status {
+    /// Command Complete (`SW_CC`).
+    ///
+    /// Asserted after calibration, POR. Remains asserted until cleared by host.
+    pub command_complete: bool,
+
+    /// Software Data Ready (`SW_DR`).
+    ///
+    /// Asserted with new data. Remains asserted until cleared by host.
+    pub data_ready: bool,
+}
+
 impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
     pub(crate) const fn new(spi: S) -> Self {
         Self {
             spi,
             phantom_: PhantomData,
         }
-    }
-
-    pub fn clear_flags(&mut self) -> Result<(), S::Error> {
-        self.write(STATUS1_ADDR, 0x00)
     }
 
     pub fn product_id(&mut self) -> Result<u8, S::Error> {
@@ -41,8 +49,21 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.read(FIRMWARE_VERSION_ADDR)
     }
 
-    pub fn status(&mut self) -> Result<u8, S::Error> {
-        self.read(STATUS1_ADDR)
+    /// When a touch is detected, Pinnacle loads X and Y position data into the position registers and
+    /// asserts the `SW_DR` flag (Bit [2] of Register 0x02, Status 1), which also triggers the `HW_DR`
+    /// signal. While the finger/stylus is present, the position registers are updated every
+    /// 10 ms and `SW_DR` and `HW_DR` are asserted.
+    pub fn status(&mut self) -> Result<Status, S::Error> {
+        let status = self.read(STATUS1_ADDR)?;
+        Ok(Status {
+            command_complete: status & 0b1000 != 0,
+            data_ready: status & 0b0100 != 0,
+        })
+    }
+
+    /// Clear Command Complete and Software Data Ready flags simultaneously.
+    pub fn clear_flags(&mut self) -> Result<(), S::Error> {
+        self.write(STATUS1_ADDR, 0x00)
     }
 
     /*
@@ -107,14 +128,16 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
 }
 
 impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
-    pub fn read_absolute(&mut self) -> Result<AbsoluteData, S::Error> {
+    pub fn read_absolute(&mut self) -> Result<Option<AbsoluteData>, S::Error> {
+        // let status =
         let data = self.read_multi::<6>(PACKET_BYTE_0_ADDR)?;
-        Ok(AbsoluteData {
+        let data = AbsoluteData {
             x: u16::from(data[2]) | (u16::from(data[4] & 0x0F) << 8),
             y: u16::from(data[3]) | (u16::from(data[4] & 0xF0) << 4),
             z: data[5] & 0x3F,
             button_flags: data[0] & 0x3F,
-        })
+        };
+        Ok(Some(data))
     }
 }
 
