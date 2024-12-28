@@ -2,6 +2,30 @@ use crate::*;
 use embedded_hal::spi::SpiDevice;
 
 #[expect(clippy::struct_excessive_bools)]
+pub struct Calibration {
+    pub background_comp: bool,
+    pub nerd_comp: bool,
+    pub track_error_comp: bool,
+    pub tap_comp: bool,
+    pub palm_error_comp: bool,
+    pub calibration_matrix: bool,
+    pub force_precalibration_noise_check: bool,
+}
+
+impl Default for Calibration {
+    fn default() -> Self {
+        Self {
+            background_comp: false,
+            nerd_comp: false,
+            track_error_comp: false,
+            tap_comp: false,
+            palm_error_comp: false,
+            calibration_matrix: true,
+            force_precalibration_noise_check: true,
+        }
+    }
+}
+
 pub struct Config {
     /// Set to false to disable X.
     ///
@@ -21,8 +45,6 @@ pub struct Config {
     /// to generated data. By default the hardware filters are enabled.
     /// Cirque does not recommend disabling hardware filtering.
     pub filter: bool,
-
-    pub calibrate: bool,
 }
 
 impl Default for Config {
@@ -31,7 +53,6 @@ impl Default for Config {
             x: true,
             y: true,
             filter: true,
-            calibrate: false,
         }
     }
 }
@@ -47,10 +68,6 @@ impl Config {
         pinnacle.set_power_mode(PowerMode::Active)?;
         let feed_config2 = mode.build2();
         pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
-        if self.calibrate {
-            let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
-            pinnacle.write(CAL_CONFIG1_ADDR, calibrate_config)?;
-        }
 
         let feed_config1 = 1
             | u8::from(!self.y) << 4

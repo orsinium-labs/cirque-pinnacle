@@ -75,6 +75,44 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         })
     }
 
+    /// Forces Pinnacle to re-calibrate.
+    ///
+    /// If the touchpad is reporting touches when no fingers are on the pad
+    /// then calibration (compensation) is wrong. Calling this function
+    /// will fix the problem.
+    pub fn calibrate(&mut self, c: &Calibration) -> Result<(), S::Error> {
+        let mut data = 1;
+        if c.background_comp {
+            data |= 0x02;
+        }
+        if c.nerd_comp {
+            data |= 0x04;
+        }
+        if c.track_error_comp {
+            data |= 0x08;
+        }
+        if c.tap_comp {
+            data |= 0x10;
+        }
+        if c.palm_error_comp {
+            data |= 0x20;
+        }
+        if !c.calibration_matrix {
+            data |= 0x40;
+        }
+        if c.force_precalibration_noise_check {
+            data |= 0x80;
+        }
+        self.disable_feed()?;
+        self.write(CAL_CONFIG1_ADDR, data)
+    }
+
+    /// Check if the touchpad is calibrated.
+    pub fn calibrated(&mut self) -> Result<bool, S::Error> {
+        let config = self.read(CAL_CONFIG1_ADDR)?;
+        Ok((config & 1) != 0)
+    }
+
     /// Clear Command Complete and Software Data Ready flags simultaneously.
     pub fn clear_flags(&mut self) -> Result<(), S::Error> {
         self.write_with_delay(STATUS1_ADDR, 0x00)
