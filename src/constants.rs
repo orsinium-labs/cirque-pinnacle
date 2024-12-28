@@ -38,10 +38,10 @@ pub const Z_IDLE_ADDR: u8 = 0x0A;
 pub const Z_SCALER_ADDR: u8 = 0x0B;
 
 // Sleep Interval
-// pub const SLEEP_INTERVAL_ADDR: u8 = 0x0C;
+pub const SLEEP_INTERVAL_ADDR: u8 = 0x0C;
 
 // Sleep Timer
-// pub const SLEEP_TIMER_ADDR: u8 = 0x0D;
+pub const SLEEP_TIMER_ADDR: u8 = 0x0D;
 
 pub const PACKET_BYTE_0_ADDR: u8 = 0x12;
 

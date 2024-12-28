@@ -121,6 +121,22 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.write(Z_SCALER_ADDR, z_scaler)
     }
 
+    pub fn sleep_timer(&mut self) -> Result<u8, S::Error> {
+        self.read(SLEEP_TIMER_ADDR)
+    }
+
+    pub fn set_sleep_timer(&mut self, sleep_timer: u8) -> Result<(), S::Error> {
+        self.write(SLEEP_TIMER_ADDR, sleep_timer)
+    }
+
+    pub fn sleep_interval(&mut self) -> Result<u8, S::Error> {
+        self.read(SLEEP_INTERVAL_ADDR)
+    }
+
+    pub fn set_sleep_interval(&mut self, sleep_interval: u8) -> Result<(), S::Error> {
+        self.write(SLEEP_INTERVAL_ADDR, sleep_interval)
+    }
+
     /// Get the current power mode.
     pub fn power_mode(&mut self) -> Result<PowerMode, S::Error> {
         let mode = self.read(SYS_CONFIG1_ADDR)?;
