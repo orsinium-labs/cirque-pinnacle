@@ -81,12 +81,6 @@ impl Mode for Relative {
     }
 }
 
-pub trait TouchpadData {}
-
-impl TouchpadData for AbsoluteData {}
-
-impl TouchpadData for RelativeData {}
-
 #[derive(Copy, Clone, Debug)]
 pub struct AbsoluteData {
     pub x: u16,
