@@ -63,10 +63,10 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.read(FIRMWARE_VERSION_ADDR)
     }
 
-    /// When a touch is detected, Pinnacle loads X and Y position data into the position registers and
-    /// asserts the `SW_DR` flag (Bit [2] of Register 0x02, Status 1), which also triggers the `HW_DR`
-    /// signal. While the finger/stylus is present, the position registers are updated every
-    /// 10 ms and `SW_DR` and `HW_DR` are asserted.
+    /// When a touch is detected, Pinnacle loads X and Y position data into the
+    /// position registers and asserts the `SW_DR` flag, which also triggers
+    /// the `HW_DR` signal. While the finger/stylus is present, the position
+    /// registers are updated every 10 ms and `SW_DR` and `HW_DR` are asserted.
     pub fn status(&mut self) -> Result<Status, S::Error> {
         let status = self.read(STATUS1_ADDR)?;
         Ok(Status {
@@ -187,8 +187,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
 }
 
 impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
-    pub fn read_absolute(&mut self) -> Result<Option<AbsoluteData>, S::Error> {
-        // let status =
+    pub fn read_absolute(&mut self) -> Result<AbsoluteData, S::Error> {
         let data = self.read_multi::<6>(PACKET_BYTE_0_ADDR)?;
         let data = AbsoluteData {
             x: u16::from(data[2]) | (u16::from(data[4] & 0x0F) << 8),
@@ -196,7 +195,8 @@ impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
             z: data[5] & 0b11_1111,
             button_flags: data[0] & 0b11_1111,
         };
-        Ok(Some(data))
+        self.clear_flags()?;
+        Ok(data)
     }
 }
 
@@ -211,7 +211,7 @@ impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
         if (data[0] & 0x20) > 0 {
             y -= 256;
         }
-        Ok(RelativeData {
+        let data = RelativeData {
             x,
             y,
             buttons: Buttons {
@@ -221,6 +221,8 @@ impl<S: SpiDevice<u8>> Touchpad<S, Relative> {
             },
             #[expect(clippy::cast_possible_wrap)]
             wheel: data[3] as i8,
-        })
+        };
+        self.clear_flags()?;
+        Ok(data)
     }
 }
