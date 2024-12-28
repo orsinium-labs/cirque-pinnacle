@@ -77,7 +77,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
 
     /// Clear Command Complete and Software Data Ready flags simultaneously.
     pub fn clear_flags(&mut self) -> Result<(), S::Error> {
-        self.write(STATUS1_ADDR, 0x00)
+        self.write_with_delay(STATUS1_ADDR, 0x00)
     }
 
     /// Number of samples generated per second.
@@ -180,9 +180,19 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
 
     pub(crate) fn write(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
         let addr = WRITE_BITS | (addr & ADDR_MASK);
-        let mut buf = [addr, data];
-        self.spi.transfer_in_place(&mut buf)?;
-        Ok(())
+        let buf = [addr, data];
+        self.spi.write(&buf)
+    }
+
+    pub(crate) fn write_with_delay(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
+        const US: u32 = 1000; // microseconds in nanosecond
+        let addr = WRITE_BITS | (addr & ADDR_MASK);
+        let buf = [addr, data];
+        self.spi.transaction(&mut [
+            Operation::Write(&buf),
+            // wait "Inter-Message Transfer Delay (required by slave)"
+            Operation::DelayNs(50 * US),
+        ])
     }
 }
 

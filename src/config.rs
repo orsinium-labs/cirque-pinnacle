@@ -1,5 +1,4 @@
 use crate::*;
-use embedded_hal::delay::DelayNs;
 use embedded_hal::spi::SpiDevice;
 
 #[expect(clippy::struct_excessive_bools)]
@@ -38,15 +37,13 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn init<M, S, D>(self, mode: &M, spi: S, delay: &mut D) -> Result<Touchpad<S, M>, S::Error>
+    pub fn init<M, S>(self, mode: &M, spi: S) -> Result<Touchpad<S, M>, S::Error>
     where
         S: SpiDevice<u8>,
         M: Mode,
-        D: DelayNs,
     {
         let mut pinnacle = Touchpad::new(spi);
         pinnacle.clear_flags()?;
-        delay.delay_us(50);
         pinnacle.set_power_mode(PowerMode::Active)?;
         let feed_config2 = mode.build2();
         pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
