@@ -95,6 +95,30 @@ pub struct AbsoluteData {
     pub button_flags: u8,
 }
 
+impl AbsoluteData {
+    pub const X_MIN: u16 = 0;
+    pub const Y_MIN: u16 = 0;
+    pub const X_MAX: u16 = 2047;
+    pub const Y_MAX: u16 = 1535;
+
+    #[must_use]
+    pub const fn touched(&self) -> bool {
+        self.z != 0
+    }
+
+    /// Represent X as f32 on the range from -1.0 to +1.0.
+    #[must_use]
+    pub fn x_f32(&self) -> f32 {
+        f32::from(self.x * 2) / f32::from(Self::X_MAX) - 1.0
+    }
+
+    /// Represent Y as f32 on the range from -1.0 to +1.0.
+    #[must_use]
+    pub fn y_f32(&self) -> f32 {
+        f32::from(self.y * 2) / f32::from(Self::Y_MAX) - 1.0
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct RelativeData {
     pub x: i16,

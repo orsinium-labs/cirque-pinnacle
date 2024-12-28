@@ -190,10 +190,16 @@ impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
     pub fn read_absolute(&mut self) -> Result<AbsoluteData, S::Error> {
         let data = self.read_multi::<6>(PACKET_BYTE_0_ADDR)?;
         let data = AbsoluteData {
-            x: u16::from(data[2]) | (u16::from(data[4] & 0x0F) << 8),
-            y: u16::from(data[3]) | (u16::from(data[4] & 0xF0) << 4),
-            z: data[5] & 0b11_1111,
-            button_flags: data[0] & 0b11_1111,
+            x: u16::from(data[2]) | (u16::from(data[4] & 0b_1111) << 8),
+            // The official example takes 4 bits from data[4] but we take only 3.
+            // That's because the docs say the max value for Y is 1535,
+            // which is `0b101_1111_1111` in binary. This leaves 3 bits for
+            // the left byte. If we take 4th byte, it is, on practice, is always 1
+            // (at least on the touchpads I have) which gives Y value alwy over 2048,
+            // even if no touch detected.
+            y: u16::from(data[3]) | (u16::from(data[4] & 0b_0111_0000) << 4),
+            z: data[5] & 0b_0011_1111,
+            button_flags: data[0] & 0b_0011_1111,
         };
         self.clear_flags()?;
         Ok(data)
