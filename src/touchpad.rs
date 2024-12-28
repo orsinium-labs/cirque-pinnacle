@@ -7,16 +7,6 @@ pub struct Touchpad<S: SpiDevice<u8>, M: Mode> {
     phantom_: PhantomData<M>,
 }
 
-#[derive(Debug)]
-pub enum SampleRate {
-    S100,
-    S80,
-    S60,
-    S40,
-    S20,
-    S10,
-}
-
 /// Pinnacle has four power modes - Active (touch detected), Idle (no touch),
 /// Low Power/ Sleep (lower power after ~ 5 seconds of inactivity)
 /// and Shutdown/Standby (no data reported).
@@ -90,21 +80,14 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.write(STATUS1_ADDR, 0x00)
     }
 
-    /*
-    100 Sample/Second 64H
-    80  Sample/Second 50H
-    60  Sample/Second 3CH
-    40  Sample/Second 28H
-    20  Sample/Second 14H
-    10  Sample/Second 0Ah
-     */
-
-    pub fn sample_rate(&mut self) -> Result<SampleRate, S::Error> {
-        todo!()
+    /// Number of samples generated per second.
+    pub fn sample_rate(&mut self) -> Result<u8, S::Error> {
+        self.read(SAMPLE_RATE_ADDR)
     }
 
-    pub fn set_sample_rate(&mut self, _sample_rate: &SampleRate) -> Result<(), S::Error> {
-        todo!()
+    /// Set the number of samples generated per second.
+    pub fn set_sample_rate(&mut self, sample_rate: u8) -> Result<(), S::Error> {
+        self.write(SAMPLE_RATE_ADDR, sample_rate)
     }
 
     /// During Z-idle (no touch detected) and when in absolute data mode,
@@ -123,18 +106,22 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.read(Z_IDLE_ADDR)
     }
 
+    /// Set the number of empty packets sent during Z-idle.
     pub fn set_z_idle(&mut self, z_idle: u8) -> Result<(), S::Error> {
         self.write(Z_IDLE_ADDR, z_idle)
     }
 
+    /// Contains the pen Z_On threshold.
     pub fn z_scaler(&mut self) -> Result<u8, S::Error> {
         self.read(Z_SCALER_ADDR)
     }
 
+    /// Set the pen Z_On threshold.
     pub fn set_z_scaler(&mut self, z_scaler: u8) -> Result<(), S::Error> {
         self.write(Z_SCALER_ADDR, z_scaler)
     }
 
+    /// Get the current power mode.
     pub fn power_mode(&mut self) -> Result<PowerMode, S::Error> {
         let mode = self.read(SYS_CONFIG1_ADDR)?;
         if mode & 0b10 != 0 {
@@ -146,6 +133,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         Ok(PowerMode::Active)
     }
 
+    /// Set the power mode.
     pub fn set_power_mode(&mut self, mode: PowerMode) -> Result<(), S::Error> {
         let mode = match mode {
             PowerMode::Sleep => 0b100,
@@ -155,7 +143,6 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.write(SYS_CONFIG1_ADDR, mode)
     }
 
-    // Read a byte from `addr`.
     fn read(&mut self, addr: u8) -> Result<u8, S::Error> {
         let addr = READ_BITS | (addr & ADDR_MASK);
         let mut buf = [addr, READ_FILL, READ_FILL, READ_FILL];

@@ -28,8 +28,8 @@ pub const CAL_CONFIG1_ADDR: u8 = 0x07;
 // Contains Data register for PS/2 Aux Control.
 // pub const PS2_AUX_CTRL_ADDR: u8 = 0x08;
 
-// Number of samples generated per second.
-// pub const SAMPLE_RATE_ADDR: u8 = 0x09;
+/// Number of samples generated per second.
+pub const SAMPLE_RATE_ADDR: u8 = 0x09;
 
 /// Number of Z=0 packets sent when Z goes from >0 to 0.
 pub const Z_IDLE_ADDR: u8 = 0x0A;
