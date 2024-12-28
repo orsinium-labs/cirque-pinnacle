@@ -17,6 +17,30 @@ pub enum SampleRate {
     S10,
 }
 
+/// Pinnacle has four power modes - Active (touch detected), Idle (no touch),
+/// Low Power/ Sleep (lower power after ~ 5 seconds of inactivity)
+/// and Shutdown/Standby (no data reported).
+#[derive(Copy, Clone, Debug)]
+pub enum PowerMode {
+    /// By default, Pinnacle toggles between Active and Idle mode. Pinnacle is in
+    /// Active mode when a touch is detected (that is, a finger or stylus is present
+    /// and is moving or tapping on the trackpad). The measurement system is active
+    /// and data packets are being created and then sent to the host. Active mode
+    /// begins as soon as a touch is detected. Idle mode is entered when the finger
+    /// has been removed and there are no data packets to be sent. While in Idle mode,
+    /// Pinnacle wakes every 10 milliseconds to check for a touch.
+    Active,
+
+    /// Enabling sleep mode will cause Pinnacle to go into a low power mode
+    /// (around 50 μA) within 5 seconds of no touch detection. While in sleep mode,
+    /// Pinnacle will wake within 300 ms to report any detection of a finger/stylus.
+    Sleep,
+
+    /// Shutdown/Standby mode is a very low power mode
+    /// and Pinnacle does not track touch in this mode.
+    Shutdown,
+}
+
 pub struct Status {
     /// Command Complete (`SW_CC`).
     ///
@@ -99,6 +123,26 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.write(Z_SCALER_ADDR, z_scaler)
     }
 
+    pub fn power_mode(&mut self) -> Result<PowerMode, S::Error> {
+        let mode = self.read(SYS_CONFIG1_ADDR)?;
+        if mode & 0b10 != 0 {
+            return Ok(PowerMode::Shutdown);
+        }
+        if mode & 0b100 != 0 {
+            return Ok(PowerMode::Sleep);
+        }
+        Ok(PowerMode::Active)
+    }
+
+    pub fn set_power_mode(&mut self, mode: PowerMode) -> Result<(), S::Error> {
+        let mode = match mode {
+            PowerMode::Sleep => 0b100,
+            PowerMode::Shutdown => 0b10,
+            PowerMode::Active => 0b0,
+        };
+        self.write(SYS_CONFIG1_ADDR, mode)
+    }
+
     // Read a byte from `addr`.
     fn read(&mut self, addr: u8) -> Result<u8, S::Error> {
         let addr = READ_BITS | (addr & ADDR_MASK);
@@ -134,8 +178,8 @@ impl<S: SpiDevice<u8>> Touchpad<S, Absolute> {
         let data = AbsoluteData {
             x: u16::from(data[2]) | (u16::from(data[4] & 0x0F) << 8),
             y: u16::from(data[3]) | (u16::from(data[4] & 0xF0) << 4),
-            z: data[5] & 0x3F,
-            button_flags: data[0] & 0x3F,
+            z: data[5] & 0b11_1111,
+            button_flags: data[0] & 0b11_1111,
         };
         Ok(Some(data))
     }
