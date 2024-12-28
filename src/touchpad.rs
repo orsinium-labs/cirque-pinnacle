@@ -137,6 +137,18 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.write(SLEEP_INTERVAL_ADDR, sleep_interval)
     }
 
+    pub fn disable_feed(&mut self) -> Result<(), S::Error> {
+        let config = self.read(FEED_CONFIG1_ADDR)?;
+        let config = config & !0x01;
+        self.write(FEED_CONFIG1_ADDR, config)
+    }
+
+    pub fn enable_feed(&mut self) -> Result<(), S::Error> {
+        let config = self.read(FEED_CONFIG1_ADDR)?;
+        let config = config | 0x01;
+        self.write(FEED_CONFIG1_ADDR, config)
+    }
+
     /// Get the current power mode.
     pub fn power_mode(&mut self) -> Result<PowerMode, S::Error> {
         let mode = self.read(SYS_CONFIG1_ADDR)?;
