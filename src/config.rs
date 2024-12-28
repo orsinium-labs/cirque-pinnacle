@@ -45,10 +45,10 @@ impl Config {
         D: DelayNs,
     {
         let mut pinnacle = Touchpad::new(spi);
-        pinnacle.write(STATUS1_ADDR, 0x00)?; // SW_CC
+        pinnacle.clear_flags()?;
         delay.delay_us(50);
+        pinnacle.set_power_mode(PowerMode::Active)?;
         let feed_config2 = mode.build2();
-        pinnacle.write(SYS_CONFIG1_ADDR, 0x00)?;
         pinnacle.write(FEED_CONFIG2_ADDR, feed_config2)?;
         if self.calibrate {
             let calibrate_config = 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;

@@ -107,6 +107,18 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         todo!()
     }
 
+    /// During Z-idle (no touch detected) and when in absolute data mode,
+    /// Pinnacle will continue to send empty packets (both X and Y data set to 0x00)
+    /// every 10 ms. The number of empty packets to be sent can be set using
+    /// [`Touchpad::set_z_idle`]. The default value is 0x1E (30 decimal).
+    /// When set to zero (0), this register prevents any empty packets from being sent,
+    /// and the position registers will contain the last sensed location until
+    /// a new finger presence is detected.
+    ///
+    /// The Z-Idle count can be a helpful design tool. For example, tap-frequency
+    /// can be determined by counting the number of Z-idle packets reported
+    /// between a finger lifting off and touching back down
+    /// (cutting short the stream of Z-idle packets).
     pub fn z_idle(&mut self) -> Result<u8, S::Error> {
         self.read(Z_IDLE_ADDR)
     }

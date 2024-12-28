@@ -45,14 +45,4 @@ pub const Z_SCALER_ADDR: u8 = 0x0B;
 
 pub const PACKET_BYTE_0_ADDR: u8 = 0x12;
 
-// pub const PACKET_BYTE_1_ADDR: u8 = 0x13;
-
-// pub const PACKET_BYTE_2_ADDR: u8 = 0x14;
-
-// pub const PACKET_BYTE_3_ADDR: u8 = 0x15;
-
-// pub const PACKET_BYTE_4_ADDR: u8 = 0x16;
-
-// pub const PACKET_BYTE_5_ADDR: u8 = 0x17;
-
 pub const PRODUCT_ID_ADDR: u8 = 0x1F;

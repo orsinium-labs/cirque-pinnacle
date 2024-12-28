@@ -62,7 +62,7 @@ impl Mode for Absolute {
     }
 
     fn build2(&self) -> u8 {
-        0
+        0b11111 // disable all relative mode features
     }
 }
 

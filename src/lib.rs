@@ -1,3 +1,4 @@
+// https://static1.squarespace.com/static/53233e4be4b044fa7626c453/t/599de7856f4ca3c38aa74632/1503520647200/gt-an-090620_2-4_interfacingtopinnacle_i2c-spi_docver1-6.pdf
 #![no_std]
 #![forbid(unsafe_code)]
 #![deny(
