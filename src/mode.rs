@@ -55,7 +55,36 @@ pub struct Relative {
     pub intellimouse: bool,
 }
 
-#[derive(Default)]
+impl Default for Relative {
+    fn default() -> Self {
+        Self {
+            x: true,
+            y: true,
+            filter: true,
+            swap_x_y: false,
+            glide_extend: false,
+            scroll: false,
+            secondary_tap: false,
+            taps: true,
+            intellimouse: false,
+        }
+    }
+}
+
+impl Relative {
+    pub fn init<S: SpiDevice<u8>>(&self, spi: S) -> Result<Touchpad<S, Self>, S::Error> {
+        let config1 =
+            1 | u8::from(!self.y) << 4 | u8::from(!self.x) << 3 | u8::from(!self.filter) << 2;
+        let config2 = u8::from(self.swap_x_y) << 7
+            | u8::from(!self.glide_extend) << 4
+            | u8::from(!self.scroll) << 3
+            | u8::from(!self.secondary_tap) << 2
+            | u8::from(!self.taps) << 1
+            | u8::from(self.intellimouse);
+        init(spi, config1, config2)
+    }
+}
+
 #[expect(clippy::struct_excessive_bools)]
 pub struct Absolute {
     /// Set to false to disable X.
@@ -88,17 +117,15 @@ pub struct Absolute {
     invert_y: bool,
 }
 
-impl Relative {
-    pub fn init<S: SpiDevice<u8>>(&self, spi: S) -> Result<Touchpad<S, Self>, S::Error> {
-        let config1 =
-            1 | u8::from(!self.y) << 4 | u8::from(!self.x) << 3 | u8::from(!self.filter) << 2;
-        let config2 = u8::from(self.swap_x_y) << 7
-            | u8::from(!self.glide_extend) << 4
-            | u8::from(!self.scroll) << 3
-            | u8::from(!self.secondary_tap) << 2
-            | u8::from(!self.taps) << 1
-            | u8::from(self.intellimouse);
-        init(spi, config1, config2)
+impl Default for Absolute {
+    fn default() -> Self {
+        Self {
+            x: true,
+            y: true,
+            filter: true,
+            invert_x: false,
+            invert_y: false,
+        }
     }
 }
 
