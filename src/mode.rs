@@ -1,5 +1,27 @@
+use crate::*;
+use embedded_hal::spi::SpiDevice;
+
 #[expect(clippy::struct_excessive_bools)]
 pub struct Relative {
+    /// Set to false to disable X.
+    ///
+    /// Disabling the X-axis will not allow regular tracking and is not recommended
+    /// for typical applications.
+    pub x: bool,
+
+    /// Set to false to disable Y.
+    ///
+    /// Disabling the Y-axis will not allow regular tracking and is not recommended
+    /// for typical applications.
+    pub y: bool,
+
+    /// Set to false to disable filter.
+    ///
+    /// The Filter disable bit controls whether the filtering algorithm is applied
+    /// to generated data. By default the hardware filters are enabled.
+    /// Cirque does not recommend disabling hardware filtering.
+    pub filter: bool,
+
     /// Swap X & Y
     pub swap_x_y: bool,
 
@@ -34,7 +56,27 @@ pub struct Relative {
 }
 
 #[derive(Default)]
+#[expect(clippy::struct_excessive_bools)]
 pub struct Absolute {
+    /// Set to false to disable X.
+    ///
+    /// Disabling the X-axis will not allow regular tracking and is not recommended
+    /// for typical applications.
+    pub x: bool,
+
+    /// Set to false to disable Y.
+    ///
+    /// Disabling the Y-axis will not allow regular tracking and is not recommended
+    /// for typical applications.
+    pub y: bool,
+
+    /// Set to false to disable filter.
+    ///
+    /// The Filter disable bit controls whether the filtering algorithm is applied
+    /// to generated data. By default the hardware filters are enabled.
+    /// Cirque does not recommend disabling hardware filtering.
+    pub filter: bool,
+
     /// X data Invert.
     ///
     /// Y and X data count invert is only available when in absolute mode.
@@ -46,39 +88,49 @@ pub struct Absolute {
     invert_y: bool,
 }
 
-pub trait Mode {
-    /// Modify FEED_CONFIG1 value.
-    #[must_use]
-    fn build1(&self) -> u8;
-
-    /// Provide FEED_CONFIG2 value.
-    #[must_use]
-    fn build2(&self) -> u8;
-}
-
-impl Mode for Absolute {
-    fn build1(&self) -> u8 {
-        u8::from(self.invert_y) << 7 | u8::from(self.invert_x) << 6 | 1 << 1
-    }
-
-    fn build2(&self) -> u8 {
-        0b11111 // disable all relative mode features
-    }
-}
-
-impl Mode for Relative {
-    fn build1(&self) -> u8 {
-        0
-    }
-
-    fn build2(&self) -> u8 {
-        u8::from(self.swap_x_y) << 7
+impl Relative {
+    pub fn init<S: SpiDevice<u8>>(&self, spi: S) -> Result<Touchpad<S, Self>, S::Error> {
+        let config1 =
+            1 | u8::from(!self.y) << 4 | u8::from(!self.x) << 3 | u8::from(!self.filter) << 2;
+        let config2 = u8::from(self.swap_x_y) << 7
             | u8::from(!self.glide_extend) << 4
             | u8::from(!self.scroll) << 3
             | u8::from(!self.secondary_tap) << 2
             | u8::from(!self.taps) << 1
-            | u8::from(self.intellimouse)
+            | u8::from(self.intellimouse);
+        init(spi, config1, config2)
     }
+}
+
+impl Absolute {
+    pub fn init<S: SpiDevice<u8>>(&self, spi: S) -> Result<Touchpad<S, Self>, S::Error> {
+        let config1 = 1
+            | u8::from(self.invert_y) << 7
+            | u8::from(self.invert_x) << 6
+            | u8::from(!self.y) << 4
+            | u8::from(!self.x) << 3
+            | u8::from(!self.filter) << 2
+            | 1 << 1;
+        let config2 = 0b11111; // disable all relative mode features;
+        init(spi, config1, config2)
+    }
+}
+
+pub trait Mode {}
+impl Mode for Relative {}
+impl Mode for Absolute {}
+
+fn init<M, S>(spi: S, config1: u8, config2: u8) -> Result<Touchpad<S, M>, S::Error>
+where
+    S: SpiDevice<u8>,
+    M: Mode,
+{
+    let mut pinnacle = Touchpad::new(spi);
+    pinnacle.clear_flags()?;
+    pinnacle.set_power_mode(PowerMode::Active)?;
+    pinnacle.write(FEED_CONFIG2_ADDR, config2)?;
+    pinnacle.write(FEED_CONFIG1_ADDR, config1)?;
+    Ok(pinnacle)
 }
 
 #[derive(Copy, Clone, Debug)]

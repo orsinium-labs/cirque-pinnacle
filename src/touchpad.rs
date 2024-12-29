@@ -31,6 +31,31 @@ pub enum PowerMode {
     Shutdown,
 }
 
+#[expect(clippy::struct_excessive_bools)]
+pub struct Calibration {
+    pub background_comp: bool,
+    pub nerd_comp: bool,
+    pub track_error_comp: bool,
+    pub tap_comp: bool,
+    pub palm_error_comp: bool,
+    pub calibration_matrix: bool,
+    pub force_precalibration_noise_check: bool,
+}
+
+impl Default for Calibration {
+    fn default() -> Self {
+        Self {
+            background_comp: false,
+            nerd_comp: false,
+            track_error_comp: false,
+            tap_comp: false,
+            palm_error_comp: false,
+            calibration_matrix: true,
+            force_precalibration_noise_check: true,
+        }
+    }
+}
+
 pub struct Status {
     /// Command Complete (`SW_CC`).
     ///
