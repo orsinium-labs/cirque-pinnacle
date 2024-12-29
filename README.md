@@ -1,6 +1,6 @@
 # glidepoint
 
-Rust crate for working with Cirque Pinnacle Glidepoint touchpads.
+Rust crate for working with Cirque Pinnacle Glidepoint touchpads on embedded systems.
 
 Features:
 
@@ -10,6 +10,7 @@ Features:
 * both absolute and relative mode
 * can configure and force calibration
 * supports almost all features, including many that are not documented
+* safe to use API
 
 ## Installation
 
@@ -19,7 +20,7 @@ cargo install glidepoint
 
 ## Usage
 
-The only thing that the crate requires is an `SpiDevice` instance. For example, here is how you can make one for ESP32 using [esp-hal](https://github.com/esp-rs/esp-hal):
+The only thing that the crate requires is an [SpiDevice](https://docs.rs/embedded-hal/1.0.0/embedded_hal/spi/trait.SpiDevice.html) instance. For example, here is how you can make one for [ESP32](https://en.wikipedia.org/wiki/ESP32) using [esp-hal](https://github.com/esp-rs/esp-hal):
 
 ```rust
 #![no_std]

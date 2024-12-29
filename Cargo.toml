@@ -1,7 +1,19 @@
 [package]
 name = "glidepoint"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["Gram <git@orsinium.dev>"]
+description = "driver for working with Cirque Pinnacle Glidepoint touchpads on embedded systems"
+repository = "https://github.com/orsinium-labs/glidepoint"
+license = "MIT"
+keywords = ["cirque", "pinnacle", "glidepoint", "touchpad", "driver"]
+categories = [
+    "api-bindings",
+    "embedded",
+    "hardware-support",
+    "no-std",
+    "no-std::no-alloc",
+]
 
 [dependencies]
 embedded-hal = "1.0.0"
