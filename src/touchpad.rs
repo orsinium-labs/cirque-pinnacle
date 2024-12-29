@@ -105,6 +105,10 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
     /// If the touchpad is reporting touches when no fingers are on the pad
     /// then calibration (compensation) is wrong. Calling this function
     /// will fix the problem.
+    ///
+    /// **IMPORTANT:** after calling this function, wait until [`Touchpad::calibrated`]
+    /// is true and then [`Touchpad::enable_feed`]. Until then, the device will not
+    /// produce any data and you should not touch the device.
     pub fn calibrate(&mut self, c: &Calibration) -> Result<(), S::Error> {
         let mut data = 1;
         if c.background_comp {
@@ -259,7 +263,7 @@ impl<S: SpiDevice<u8>, M: Mode> Touchpad<S, M> {
         self.spi.write(&buf)
     }
 
-    pub(crate) fn write_with_delay(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
+    fn write_with_delay(&mut self, addr: u8, data: u8) -> Result<(), S::Error> {
         const US: u32 = 1000; // microseconds in nanosecond
         let addr = WRITE_BITS | (addr & ADDR_MASK);
         let buf = [addr, data];
