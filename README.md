@@ -1,6 +1,6 @@
 # cirque-pinnacle
 
-Rust crate for working with Cirque Pinnacle Glidepoint touchpads on embedded systems.
+Rust crate for working with [Cirque Pinnacle Glidepoint](https://www.cirque.com/glidepoint-circle-trackpads) touchpads on embedded systems.
 
 Features:
 
