@@ -1,10 +1,10 @@
 [package]
-name = "glidepoint"
+name = "cirque-pinnacle"
 version = "1.0.0"
 edition = "2021"
 authors = ["Gram <git@orsinium.dev>"]
 description = "driver for working with Cirque Pinnacle Glidepoint touchpads on embedded systems"
-repository = "https://github.com/orsinium-labs/glidepoint"
+repository = "https://github.com/orsinium-labs/cirque-pinnacle"
 license = "MIT"
 keywords = ["cirque", "pinnacle", "glidepoint", "touchpad", "driver"]
 categories = [

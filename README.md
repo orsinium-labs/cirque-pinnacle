@@ -1,4 +1,4 @@
-# glidepoint
+# cirque-pinnacle
 
 Rust crate for working with Cirque Pinnacle Glidepoint touchpads on embedded systems.
 
@@ -15,7 +15,7 @@ Features:
 ## Installation
 
 ```bash
-cargo install glidepoint
+cargo install cirque-pinnacle
 ```
 
 ## Usage
@@ -67,7 +67,7 @@ fn main() -> ! {
 You can then configure and initialize the touchpad:
 
 ```rust
-let mode = glidepoint::Absolute::default();
+let mode = cirque_pinnacle::Absolute::default();
 let mut pad = mode.init(spi_device).unwrap();
 ```
 
