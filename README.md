@@ -15,7 +15,7 @@ Features:
 ## Installation
 
 ```bash
-cargo install cirque-pinnacle
+cargo add cirque-pinnacle
 ```
 
 ## Usage
